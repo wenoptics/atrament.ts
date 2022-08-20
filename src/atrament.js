@@ -1,7 +1,8 @@
-const { Mouse, Point } = require('./mouse.js');
-const Constants = require('./constants.js');
-const { AtramentEventTarget } = require('./events.js');
-const Pixels = require('./pixels.js');
+import { Mouse, Point } from './mouse.js';
+import Constants from './constants.js';
+import Pixels from './pixels.js';
+import { AtramentEventTarget } from './events.js';
+
 
 const DrawingMode = {
   DRAW: 'draw',
@@ -12,7 +13,7 @@ const DrawingMode = {
 
 const PathDrawingModes = [DrawingMode.DRAW, DrawingMode.ERASE];
 
-module.exports = class Atrament extends AtramentEventTarget {
+class Atrament extends AtramentEventTarget {
   constructor(selector, config = {}) {
     if (typeof window === 'undefined') {
       throw new Error('Looks like we\'re not running in a browser');
@@ -447,4 +448,6 @@ module.exports = class Atrament extends AtramentEventTarget {
       this.dispatchEvent('fillend', {});
     }
   }
-};
+}
+
+export { Atrament };

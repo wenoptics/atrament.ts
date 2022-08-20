@@ -2,7 +2,7 @@
   "name": "atrament",
   "version": "2.0.0",
   "description": "Tiny JS library for beautiful drawing and handwriting on the HTML Canvas",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "watch": "webpack --config webpack.config.js --watch",
@@ -36,6 +36,8 @@
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-react": "^7.14.3",
+    "ts-loader": "^8.2.0",
+    "typescript": "^4.7.4",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10"
   }

@@ -1,35 +1,39 @@
 const path = require('path');
 
-module.exports = {
+function createConfig(libraryTarget = 'var') {
+  return {
     output: {
-        path: path.resolve('./dist'),
-        filename: 'atrament.min.js',
-        library: 'Atrament',
-        libraryTarget: 'var',
+      path: path.resolve(__dirname, 'dist'),
+      filename: `atrament.${libraryTarget}.min.js`,
+      library: 'atramentJs',
+      libraryTarget
     },
     entry: [
-        './index.js'
+      './index.ts'
     ],
     mode: process.env.NODE_ENV === 'development' ? 'development' : 'production',
-    devtool: 'source-map',
+    devtool: 'inline-source-map',
     optimization: {
-        minimize: true,
+      minimize: true
     },
     module: {
-        rules: [
-            {
-                test: /\.js$/,
-                exclude: /(node_modules|bower_components)/,
-                use: [
-                    {
-                        loader: 'babel-loader',
-                        options: {
-                            presets: ['@babel/preset-env']
-                        }
-                    },
-                    'eslint-loader?fix=true'
-                ]
-            }
-        ]
+      rules: [
+        {
+          test: /\.tsx?$/,
+          use: 'ts-loader',
+          exclude: /node_modules/
+        }
+      ]
+    },
+    resolve: {
+      extensions: ['.tsx', '.ts', '.js']
     }
-};
+  };
+}
+
+// noinspection WebpackConfigHighlighting
+module.exports = [
+  createConfig('var'),
+  createConfig('amd'),
+  createConfig('umd')
+];
