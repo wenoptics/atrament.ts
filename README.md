@@ -1,6 +1,8 @@
-# Atrament
+# Atrament.ts
 
 **A small JS library for beautiful drawing and handwriting on the HTML Canvas**
+
+This is based on the original `Atrament.js` by `jakubfiala`. This fork adds TypeScript support and other enhancements.
 
 ---
 
@@ -25,7 +27,7 @@ improved it, rewrote it in ES6 and made it into a neat little library.
 
 Enjoy!
 
-- [Atrament](#atrament)
+- [Atrament](#atrament.ts)
   - [Installation](#installation)
       - [as a module](#as-a-module)
       - [script tag](#script-tag)
