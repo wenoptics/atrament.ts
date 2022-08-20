@@ -209,8 +209,8 @@ can be configured to record the "pen strokes".
 The first step is to enable `recordStrokes`, and add a listener for the `strokerecorded` event:
 
 ```js
-atrament.recordStrokes = true;
-atrament.addEventListener('strokerecorded', ({ stroke }) => {
+atm.recordStrokes = true;
+atm.addEventListener('strokerecorded', ({ stroke }) => {
   // store `stroke` somewhere
 });
 ```
@@ -219,18 +219,18 @@ The stroke can then be reconstructed using methods of the `Atrament` class:
 
 ```js
 // set drawing options
-atrament.mode = stroke.mode;
-atrament.weight = stroke.weight;
-atrament.smoothing = stroke.smoothing;
-atrament.color = stroke.color;
-atrament.adaptiveStroke = stroke.adaptiveStroke;
+atm.mode = stroke.mode;
+atm.weight = stroke.weight;
+atm.smoothing = stroke.smoothing;
+atm.color = stroke.color;
+atm.adaptiveStroke = stroke.adaptiveStroke;
 
 // don't want to modify original data
 const points = stroke.points.slice();
 
 const firstPoint = points.shift().point;
 // beginStroke moves the "pen" to the given position and starts the path
-atrament.beginStroke(firstPoint.x, firstPoint.y);
+atm.beginStroke(firstPoint.x, firstPoint.y);
 
 let prevPoint = firstPoint;
 while (points.length > 0) {
@@ -239,15 +239,21 @@ while (points.length > 0) {
   // the `draw` method accepts the current real coordinates
   // (i. e. actual cursor position), and the previous processed (filtered)
   // position. It returns an object with the current processed position.
-  const { x, y } = atrament.draw(point.x, point.y, prevPoint.x, prevPoint.y);
+  const {
+    x,
+    y
+  } = atm.draw(point.x, point.y, prevPoint.x, prevPoint.y);
 
   // the processed position is the one where the line is actually drawn to
   // so we have to store it and pass it to `draw` in the next step
-  prevPoint = { x, y };
+  prevPoint = {
+    x,
+    y
+  };
 }
 
 // endStroke closes the path
-atrament.endStroke(prevPoint.x, prevPoint.y);
+atm.endStroke(prevPoint.x, prevPoint.y);
 ```
 
 ## Development

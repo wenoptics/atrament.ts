@@ -3,7 +3,7 @@ const canvas = document.getElementById('sketcher');
 canvas.style.cursor = 'crosshair';
 
 // instantiate Atrament
-const atrament = new atramentJs.Atrament(canvas, {
+const atm = new atrament.Atrament(canvas, {
   width: canvas.offsetWidth,
   height: canvas.offsetHeight
 });
@@ -23,29 +23,29 @@ const log = (...messages) => {
 
 // we only display the Clear button if canvas is dirty
 const clearButton = document.getElementById('clear');
-atrament.addEventListener('dirty', () => {
+atm.addEventListener('dirty', () => {
   log('event: dirty');
-  clearButton.style.display = atrament.isDirty ? 'inline-block' : 'none';
+  clearButton.style.display = atm.isDirty ? 'inline-block' : 'none';
 });
 
-atrament.addEventListener('clean', () => {
+atm.addEventListener('clean', () => {
   log('event: clean');
 });
 
-atrament.addEventListener('fillstart', ({ x, y }) => {
+atm.addEventListener('fillstart', ({ x, y }) => {
   canvas.style.cursor = 'wait';
   log(`event: fillstart x: ${x} y: ${y}`);
 });
 
-atrament.addEventListener('fillend', () => {
+atm.addEventListener('fillend', () => {
   canvas.style.cursor = 'crosshair';
   log('event: fillend');
 });
 
-atrament.addEventListener('strokestart', () => log('event: strokestart'));
-atrament.addEventListener('strokeend', () => log('event: strokeend'));
+atm.addEventListener('strokestart', () => log('event: strokestart'));
+atm.addEventListener('strokeend', () => log('event: strokeend'));
 
-atrament.addEventListener('strokerecorded', ({ stroke }) => {
+atm.addEventListener('strokerecorded', ({ stroke }) => {
   log(`event: strokerecorded - ${stroke.points.length} points`);
 });
 
@@ -59,14 +59,14 @@ const waitUntil = function (reference, time) {
 };
 
 function recordAStroke() {
-  atrament.recordStrokes = true;
+  atm.recordStrokes = true;
   document.querySelector('#recordButton').value = 'Recording...';
 }
 
 let recordedStroke;
-atrament.addEventListener('strokerecorded', (stroke) => {
+atm.addEventListener('strokerecorded', (stroke) => {
   recordedStroke = stroke.stroke;
-  atrament.recordStrokes = false;
+  atm.recordStrokes = false;
   document.querySelector('#recordButton').value = 'Record a stroke';
   document.querySelector('#playButton').style.display = 'inline';
 });
@@ -77,11 +77,11 @@ async function playRecorded() {
   const offset_y = Math.floor(Math.random() * 100) - 50;
 
   // set drawing options
-  atrament.weight = recordedStroke.weight;
-  atrament.mode = recordedStroke.mode;
-  atrament.smoothing = recordedStroke.smoothing;
-  atrament.color = recordedStroke.color;
-  atrament.adaptiveStroke = recordedStroke.adaptiveStroke;
+  atm.weight = recordedStroke.weight;
+  atm.mode = recordedStroke.mode;
+  atm.smoothing = recordedStroke.smoothing;
+  atm.color = recordedStroke.color;
+  atm.adaptiveStroke = recordedStroke.adaptiveStroke;
 
   // add a time reference
   const reference = performance.now();
@@ -90,7 +90,7 @@ async function playRecorded() {
   await waitUntil(reference, recordedStroke.points[0].time);
 
   let prev_point = recordedStroke.points[0].point;
-  atrament.beginStroke(prev_point.x, prev_point.y);
+  atm.beginStroke(prev_point.x, prev_point.y);
 
   for (const point of recordedStroke.points.slice(1)) {
     // waiting for time from reference
@@ -99,10 +99,10 @@ async function playRecorded() {
     // the `draw` method accepts the current real coordinates
     // (i. e. actual cursor position), and the previous processed (filtered)
     // position. It returns an object with the current processed position.
-    prev_point = atrament.draw(point.point.x + offset_x, point.point.y + offset_y, prev_point.x, prev_point.y);
+    prev_point = atm.draw(point.point.x + offset_x, point.point.y + offset_y, prev_point.x, prev_point.y);
   }
 
-  atrament.endStroke(prev_point.x, prev_point.y);
+  atm.endStroke(prev_point.x, prev_point.y);
 }
 
 // Simple example, see optional options for more configuration.
@@ -146,5 +146,5 @@ const pickr = Pickr.create({
 });
 
 pickr.on('save', (color) => {
-  atrament.color = color.toRGBA().toString();
+  atm.color = color.toRGBA().toString();
 });

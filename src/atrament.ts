@@ -92,7 +92,7 @@ class Atrament extends AtramentEventTarget {
         mouse.set(x, y);
         mouse.previous.set(newX, newY);
       }
- else {
+      else {
         mouse.set(x, y);
       }
     };
@@ -185,18 +185,11 @@ class Atrament extends AtramentEventTarget {
     this._mode = DrawingMode.DRAW;
     this.adaptiveStroke = true;
 
-    if (config.weight !== undefined) {
-      this.weight = config.weight;
-    }
-    if (config.smoothing !== undefined) {
-      this.smoothing = config.smoothing;
-    }
-    if (config.adaptiveStroke !== undefined) {
-      this.adaptiveStroke = config.adaptiveStroke;
-    }
-    if (config.mode !== undefined) {
-      this.mode = config.mode;
-    }
+    if (config.weight !== undefined) this.weight = config.weight;
+    if (config.smoothing !== undefined) this.smoothing = config.smoothing;
+    if (config.adaptiveStroke !== undefined) this.adaptiveStroke = config.adaptiveStroke;
+    if (config.mode !== undefined) this.mode = config.mode;
+
   }
 
   /**

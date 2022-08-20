@@ -1,3 +1,4 @@
+/* eslint-disable */
 const path = require('path');
 
 function createConfig(libraryTarget = 'var') {
@@ -5,7 +6,7 @@ function createConfig(libraryTarget = 'var') {
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: `atrament.${libraryTarget}.min.js`,
-      library: 'atramentJs',
+      library: 'atrament',
       libraryTarget
     },
     entry: [
