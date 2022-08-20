@@ -1,11 +1,15 @@
 // make a class for Point
 class Point {
-  constructor(x, y) {
+  x: number;
+
+  y: number;
+
+  constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
   }
 
-  set(x, y) {
+  set(x: number, y: number) {
     this.x = x;
     this.y = y;
   }
@@ -13,6 +17,11 @@ class Point {
 
 // make a class for the mouse data
 class Mouse extends Point {
+
+  down: boolean;
+
+  previous: Point;
+
   constructor() {
     super(0, 0);
     this.down = false;
@@ -20,4 +29,4 @@ class Mouse extends Point {
   }
 }
 
-module.exports = { Mouse, Point };
+export { Mouse, Point };

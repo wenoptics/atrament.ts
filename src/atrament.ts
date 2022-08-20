@@ -1,20 +1,56 @@
-import { Mouse, Point } from './mouse.js';
-import Constants from './constants.js';
-import Pixels from './pixels.js';
-import { AtramentEventTarget } from './events.js';
+import { Mouse, Point } from './mouse';
+import * as Constants from './constants';
+import * as Pixels from './pixels';
+import { AtramentEventTarget } from './events';
+import { ColorPixelRGBA } from './pixels';
+import { includes, unpackOffsetXY } from './utils';
 
 
-const DrawingMode = {
-  DRAW: 'draw',
-  ERASE: 'erase',
-  FILL: 'fill',
-  DISABLED: 'disabled'
-};
+enum DrawingMode {
+  DRAW = 'draw',
+  ERASE = 'erase',
+  FILL = 'fill',
+  DISABLED = 'disabled',
+}
 
 const PathDrawingModes = [DrawingMode.DRAW, DrawingMode.ERASE];
 
+type AtramentConfig = {
+  width?: number
+  height?: number
+  color?: string
+  weight?: number
+  smoothing?: number
+  adaptiveStroke?: boolean
+  mode?: DrawingMode
+}
+
+
 class Atrament extends AtramentEventTarget {
-  constructor(selector, config = {}) {
+
+  canvas: HTMLCanvasElement;
+  mouse: Mouse;
+
+  private context: CanvasRenderingContext2D;
+  private _filling: boolean;
+  private _fillStack: [number, number, ColorPixelRGBA][];
+  recordStrokes: boolean;
+  strokeTimestamp: number;
+  strokeMemory: { point: Point, time: number }[];
+
+  private _dirty: boolean;
+  private smoothing: number;
+  private _thickness: number;
+  private _targetThickness: number;
+  private _weight: number;
+  private _maxWeight: number;
+
+  public destroy: () => void;
+  _mode: DrawingMode;
+  adaptiveStroke: boolean;
+
+
+  constructor(selector: string | HTMLCanvasElement, config: AtramentConfig = {}) {
     if (typeof window === 'undefined') {
       throw new Error('Looks like we\'re not running in a browser');
     }
@@ -35,26 +71,17 @@ class Atrament extends AtramentEventTarget {
     this.mouse = new Mouse();
 
     // mousemove handler
-    const mouseMove = (event) => {
+    const mouseMove = (event: MouseEvent | TouchEvent) => {
       if (event.cancelable) {
         event.preventDefault();
       }
 
       const rect = this.canvas.getBoundingClientRect();
-      const position = event.changedTouches && event.changedTouches[0] || event;
-      let x = position.offsetX;
-      let y = position.offsetY;
-
-      if (typeof x === 'undefined') {
-        x = position.clientX - rect.left;
-      }
-      if (typeof y === 'undefined') {
-        y = position.clientY - rect.top;
-      }
+      const { x, y } = unpackOffsetXY(event, rect);
 
       const { mouse } = this;
       // draw if we should draw
-      if (mouse.down && PathDrawingModes.includes(this.mode)) {
+      if (mouse.down && includes(PathDrawingModes, this.mode)) {
         const { x: newX, y: newY } = this.draw(x, y, mouse.previous.x, mouse.previous.y);
 
         if (!this._dirty && this.mode === DrawingMode.DRAW && (x !== mouse.x || y !== mouse.y)) {
@@ -65,13 +92,13 @@ class Atrament extends AtramentEventTarget {
         mouse.set(x, y);
         mouse.previous.set(newX, newY);
       }
-      else {
+ else {
         mouse.set(x, y);
       }
     };
 
     // mousedown handler
-    const mouseDown = (event) => {
+    const mouseDown = (event: MouseEvent | TouchEvent) => {
       if (event.cancelable) {
         event.preventDefault();
       }
@@ -91,7 +118,7 @@ class Atrament extends AtramentEventTarget {
       this.beginStroke(mouse.previous.x, mouse.previous.y);
     };
 
-    const mouseUp = (e) => {
+    const mouseUp = (event: MouseEvent | TouchEvent) => {
       if (this.mode === DrawingMode.FILL) {
         return;
       }
@@ -102,12 +129,11 @@ class Atrament extends AtramentEventTarget {
         return;
       }
 
-      const position = e.changedTouches && e.changedTouches[0] || e;
-      const x = position.offsetX;
-      const y = position.offsetY;
+      const rect = this.canvas.getBoundingClientRect();
+      const { x, y } = unpackOffsetXY(event, rect);
       mouse.down = false;
 
-      if (mouse.x === x && mouse.y === y && PathDrawingModes.includes(this.mode)) {
+      if (mouse.x === x && mouse.y === y && includes(PathDrawingModes, this.mode)) {
         const { x: nx, y: ny } = this.draw(mouse.x, mouse.y, mouse.previous.x, mouse.previous.y);
         mouse.previous.set(nx, ny);
       }
@@ -159,9 +185,18 @@ class Atrament extends AtramentEventTarget {
     this._mode = DrawingMode.DRAW;
     this.adaptiveStroke = true;
 
-    // update from config object
-    ['weight', 'smoothing', 'adaptiveStroke', 'mode']
-      .forEach(key => config[key] === undefined ? 0 : this[key] = config[key]);
+    if (config.weight !== undefined) {
+      this.weight = config.weight;
+    }
+    if (config.smoothing !== undefined) {
+      this.smoothing = config.smoothing;
+    }
+    if (config.adaptiveStroke !== undefined) {
+      this.adaptiveStroke = config.adaptiveStroke;
+    }
+    if (config.mode !== undefined) {
+      this.mode = config.mode;
+    }
   }
 
   /**
@@ -170,7 +205,7 @@ class Atrament extends AtramentEventTarget {
    * @param {number} x
    * @param {number} y
    */
-  beginStroke(x, y) {
+  beginStroke(x: number, y: number) {
     this.context.beginPath();
     this.context.moveTo(x, y);
 
@@ -187,7 +222,7 @@ class Atrament extends AtramentEventTarget {
    * @param {number} x
    * @param {number} y
    */
-  endStroke(x, y) {
+  endStroke(x: number, y: number) {
     this.context.closePath();
 
     if (this.recordStrokes) {
@@ -220,7 +255,7 @@ class Atrament extends AtramentEventTarget {
    * @param {number} prevX previous X coordinate
    * @param {number} prevY previous Y coordinate
    */
-  draw(x, y, prevX, prevY) {
+  draw(x: number, y: number, prevX: number, prevY: number) {
     if (this.recordStrokes) {
       this.strokeMemory.push({ point: new Point(x, y), time: performance.now() - this.strokeTimestamp });
     }
@@ -269,7 +304,7 @@ class Atrament extends AtramentEventTarget {
   }
 
   get color() {
-    return this.context.strokeStyle;
+    return this.context.strokeStyle.toString();
   }
 
   set color(c) {
@@ -349,7 +384,8 @@ class Atrament extends AtramentEventTarget {
     const { mouse } = this;
     const { context } = this;
     // converting to Array because Safari 9
-    const startColor = Array.from(context.getImageData(mouse.x, mouse.y, 1, 1).data);
+    const startColor = Array.from(context.getImageData(mouse.x, mouse.y, 1, 1).data) as ColorPixelRGBA;
+    if (startColor.length !== 4) throw new Error('Expect pixel format of RGBA');
 
     if (!this._filling) {
       const { x, y } = mouse;
@@ -366,21 +402,25 @@ class Atrament extends AtramentEventTarget {
     }
   }
 
-  _floodFill(_startX, _startY, startColor) {
+  _floodFill(_startX: number, _startY: number, startColor: ColorPixelRGBA) {
     const { context } = this;
     const startX = Math.floor(_startX);
     const startY = Math.floor(_startY);
     const canvasWidth = context.canvas.width;
     const canvasHeight = context.canvas.height;
     const pixelStack = [[startX, startY]];
+
     // hex needs to be trasformed to rgb since colorLayer accepts RGB
     const fillColor = Pixels.hexToRgb(this.color);
+
     // Need to save current context with colors, we will update it
     const colorLayer = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
+
+    const colorLayerData = Array.from(colorLayer.data);
     const alpha = Math.min(context.globalAlpha * 10 * 255, 255);
-    const colorPixel = Pixels.colorPixel(colorLayer.data, ...fillColor, startColor, alpha);
-    const matchColor = Pixels.matchColor(colorLayer.data, ...startColor);
-    const matchFillColor = Pixels.matchColor(colorLayer.data, ...[...fillColor, 255]);
+    const colorPixel = Pixels.colorPixel(colorLayerData, ...fillColor, startColor, alpha);
+    const matchColor = Pixels.matchColor(colorLayerData, ...startColor);
+    const matchFillColor = Pixels.matchColor(colorLayerData, ...fillColor, 255);
 
     // check if we're trying to fill with the same colour, if so, stop
     if (matchFillColor((startY * context.canvas.width + startX) * 4)) {
